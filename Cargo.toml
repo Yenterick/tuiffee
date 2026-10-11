@@ -1,0 +1,11 @@
+[package]
+name = "tuiffee"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+capitalize = "0.3.4"
+color-eyre = "0.6.5"
+crossterm = "0.29.0"
+diesel = { version = "2.3.14", features = ["returning_clauses_for_sqlite_3_35", "sqlite"] }
+ratatui = { version = "0.30.2", features = ["all-widgets"] }
