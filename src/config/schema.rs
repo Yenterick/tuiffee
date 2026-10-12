@@ -17,7 +17,7 @@ diesel::table! {
         id -> Nullable<Integer>,
         brand -> Text,
         name -> Nullable<Text>,
-        tostion_level -> Text,
+        roasting_level -> Text,
         process_type -> Text,
         descriptive_notes -> Nullable<Text>,
         location -> Nullable<Text>,

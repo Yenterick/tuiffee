@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS coffee (
   id INTEGER PRIMARY KEY,
   brand VARCHAR(255) NOT NULL,
   name VARCHAR(255),
-  tostion_level VARCHAR(255) CHECK ( tostion_level IN ('light', 'medium', 'medium-dark', 'dark') ) NOT NULL,
+  roasting_level VARCHAR(255) CHECK ( roasting_level IN ('light', 'medium', 'medium-dark', 'dark') ) NOT NULL,
   process_type VARCHAR(255) CHECK ( process_type IN ('washed', 'honey', 'natural', 'culturing') ) NOT NULL,
   descriptive_notes VARCHAR(255),
   location VARCHAR(255),
