@@ -31,7 +31,7 @@ erDiagram
         VARCHAR(255) name
         VARCHAR(255) descriptive_notes
         VARCHAR(255) location
-        TOSTION_LEVEL tostion_level
+        ROAST_LEVEL roast_level
         PROCESS_TYPE process_type
         INTEGER variety_id
         TIMESTAMP created_at
@@ -83,6 +83,7 @@ erDiagram
         INTEGER body
         INTEGER aftertaste
         INTEGER balance
+        VARCHAR(255) observations
         INTEGER preparation_record_id
         TIMESTAMP created_at
         TIMESTAMP updated_at
