@@ -3,6 +3,11 @@ use crate::config::schema::variety;
 use crate::models::variety::Variety;
 use diesel::prelude::*;
 
-pub struct variety_repository;
+pub struct VarietyRepository;
 
-impl variety_repository {}
+impl VarietyRepository {
+    pub fn get_all(conn: &mut SqliteConnection) -> Result<Vec<Variety>, DbError> {
+        let varieties = variety::table.load(conn)?;
+        Ok(varieties)
+    }
+}
