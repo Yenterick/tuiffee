@@ -1,6 +1,4 @@
-use crate::config::db::DbError;
-use crate::config::schema::variety;
-use crate::models::variety::Variety;
+use crate::{config::db::DbError, config::schema::variety, models::variety::Variety};
 use diesel::prelude::*;
 
 pub struct VarietyRepository;
