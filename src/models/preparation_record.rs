@@ -12,3 +12,12 @@ pub struct PreparationRecord {
     created_at: Option<String>,
     updated_at: Option<String>,
 }
+
+#[derive(Queryable)]
+pub struct PreparationRecordSummary {
+    pub id: Option<i32>,
+    pub coffee_brand: String,
+    pub coffee_name: Option<String>,
+    pub preeparation_technique_name: String,
+    pub created_at: Option<String>,
+}
