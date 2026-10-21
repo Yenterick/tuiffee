@@ -5,7 +5,6 @@ pub struct VarietyRepository;
 
 impl VarietyRepository {
     pub fn get_all(conn: &mut SqliteConnection) -> Result<Vec<Variety>, DbError> {
-        let varieties = variety::table.load(conn)?;
-        Ok(varieties)
+        variety::table.load::<Variety>(conn).map_err(DbError::from)
     }
 }
