@@ -3,4 +3,6 @@ pub enum ScreenAction {
     Confirm,
     Back,
     Exit,
+    NextPage,
+    PrevPage,
 }

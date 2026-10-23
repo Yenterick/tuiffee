@@ -6,8 +6,8 @@ pub struct HomeState {
 }
 
 impl HomeState {
-    pub fn new() -> HomeState {
-        let mut status: HomeState = HomeState {
+    pub fn new() -> Self {
+        let mut status = Self {
             list_state: ListState::default(),
             selected_option: None,
         };

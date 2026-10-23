@@ -109,6 +109,7 @@ impl Page for Home {
         .highlight_symbol(highlight_symbol)
         .highlight_style(
             Style::default()
+                .bold()
                 .fg(ColorScheme::CHICORY_COFFEE)
                 .bg(ColorScheme::DARK_IRIS),
         );
