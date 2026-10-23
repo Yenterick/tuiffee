@@ -8,16 +8,19 @@ use ratatui::{
 };
 
 use crate::presentation::{
-    components::confirmation_modal::ConfirmationModal,
-    events::confirmation_choice::ConfirmationChoice, state::app_state::AppState,
+    components::{confirmation_modal::ConfirmationModal, outline::Outline},
+    events::confirmation_choice::ConfirmationChoice,
+    pages::{home::Home, page::Page},
+    state::app_state::AppState,
     theme::color_scheme::ColorScheme,
 };
 
 pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut app_state = AppState::new();
+    let mut home_page: Home = Home::new();
 
     loop {
-        terminal.draw(|frame: &mut Frame<'_>| render(frame, &mut app_state))?;
+        terminal.draw(|frame: &mut Frame<'_>| render(frame, &mut app_state, &mut home_page))?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
@@ -32,6 +35,10 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
                     continue;
                 }
 
+                _ => {}
+            }
+
+            match home_page.handle_key(key, &mut app_state.home_state) {
                 _ => {}
             }
 
@@ -54,12 +61,16 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     Ok(())
 }
 
-fn render(frame: &mut Frame, app_state: &mut AppState) {
+fn render(frame: &mut Frame, app_state: &mut AppState, home_page: &mut Home) {
     let [complete] = Layout::horizontal([Constraint::Fill(1)]).areas(frame.area());
 
     Block::new()
         .bg(ColorScheme::CHICORY_COFFEE)
         .render(complete, frame.buffer_mut());
+
+    Outline.render(complete, frame.buffer_mut());
+
+    home_page.render(complete, frame.buffer_mut(), &mut app_state.home_state);
 
     if let Some(modal) = &app_state.confirmation_modal {
         modal.render(complete, frame.buffer_mut());
