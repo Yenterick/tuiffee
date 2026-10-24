@@ -1,5 +1,9 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{buffer::Buffer, layout::Rect};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    widgets::{Block, Borders, Widget},
+};
 
 use crate::{
     models::coffee::Coffee,
@@ -42,13 +46,20 @@ impl Page for CoffeeVarieties {
                 ScreenAction::None
             }
 
-            KeyCode::Char('h') => ScreenAction::PrevPage,
+            KeyCode::Char('h') => ScreenAction::PreviousPage,
 
             KeyCode::Char('l') => ScreenAction::NextPage,
+
+            KeyCode::Char('q') => ScreenAction::Back,
 
             _ => ScreenAction::None,
         }
     }
 
-    fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {}
+    fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let [list_area, description_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Fill(2)]).areas(area);
+
+        Block::new().borders(Borders::RIGHT).render(list_area, buf);
+    }
 }

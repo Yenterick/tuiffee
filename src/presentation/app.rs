@@ -9,8 +9,8 @@ use ratatui::{
 
 use crate::presentation::{
     components::{confirmation_modal::ConfirmationModal, outline::Outline},
-    events::confirmation_choice::ConfirmationChoice,
-    pages::{home::Home, page::Page},
+    events::{confirmation_choice::ConfirmationChoice, pages::Pages, screen_action::ScreenAction},
+    pages::{coffee_varieties::CoffeeVarieties, home::Home, page::Page},
     state::app_state::AppState,
     theme::color_scheme::ColorScheme,
 };
@@ -18,9 +18,17 @@ use crate::presentation::{
 pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut app_state = AppState::new();
     let mut home_page: Home = Home::new();
+    let mut coffee_varieties_page = CoffeeVarieties::new();
 
     loop {
-        terminal.draw(|frame: &mut Frame<'_>| render(frame, &mut app_state, &mut home_page))?;
+        terminal.draw(|frame: &mut Frame<'_>| {
+            render(
+                frame,
+                &mut app_state,
+                &mut home_page,
+                &mut coffee_varieties_page,
+            )
+        })?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
@@ -38,7 +46,23 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
                 _ => {}
             }
 
-            match home_page.handle_key(key, &mut app_state.home_state) {
+            match app_state.current_page {
+                Pages::Home => match home_page.handle_key(key, &mut app_state.home_state) {
+                    ScreenAction::GoTo(page) => app_state.current_page = page,
+
+                    _ => {}
+                },
+
+                Pages::CoffeeVarieties => {
+                    match coffee_varieties_page
+                        .handle_key(key, &mut app_state.coffee_varieties_state)
+                    {
+                        ScreenAction::Back => app_state.current_page = Pages::Home,
+
+                        _ => {}
+                    }
+                }
+
                 _ => {}
             }
 
@@ -61,8 +85,17 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     Ok(())
 }
 
-fn render(frame: &mut Frame, app_state: &mut AppState, home_page: &mut Home) {
+fn render(
+    frame: &mut Frame,
+    app_state: &mut AppState,
+    home_page: &mut Home,
+    coffee_varieties_page: &mut CoffeeVarieties,
+) {
     let [complete] = Layout::horizontal([Constraint::Fill(1)]).areas(frame.area());
+
+    let [content] = Layout::horizontal([Constraint::Fill(1)])
+        .margin(1)
+        .areas(complete);
 
     Block::new()
         .bg(ColorScheme::CHICORY_COFFEE)
@@ -70,7 +103,17 @@ fn render(frame: &mut Frame, app_state: &mut AppState, home_page: &mut Home) {
 
     Outline.render(complete, frame.buffer_mut());
 
-    home_page.render(complete, frame.buffer_mut(), &mut app_state.home_state);
+    match app_state.current_page {
+        Pages::Home => home_page.render(content, frame.buffer_mut(), &mut app_state.home_state),
+
+        Pages::CoffeeVarieties => coffee_varieties_page.render(
+            content,
+            frame.buffer_mut(),
+            &mut app_state.coffee_varieties_state,
+        ),
+
+        _ => {}
+    }
 
     if let Some(modal) = &app_state.confirmation_modal {
         modal.render(complete, frame.buffer_mut());

@@ -8,7 +8,9 @@ use ratatui::{
 };
 
 use crate::presentation::{
-    events::screen_action::ScreenAction, pages::page::Page, state::home_state::HomeState,
+    events::{pages::Pages, screen_action::ScreenAction},
+    pages::page::Page,
+    state::home_state::HomeState,
     theme::color_scheme::ColorScheme,
 };
 
@@ -34,6 +36,18 @@ impl Page for Home {
                 state.list_state.select_previous();
                 ScreenAction::None
             }
+
+            KeyCode::Enter => match state.list_state.selected().unwrap_or(0) as i32 {
+                0 => ScreenAction::GoTo(Pages::PrepareCoffee),
+
+                1 => ScreenAction::GoTo(Pages::CupCoffee),
+
+                2 => ScreenAction::GoTo(Pages::CoffeeVarieties),
+
+                3 => ScreenAction::GoTo(Pages::PreparationMethods),
+
+                _ => ScreenAction::None,
+            },
 
             _ => ScreenAction::None,
         }
