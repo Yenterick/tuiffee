@@ -1,20 +1,22 @@
+use capitalize::Capitalize;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    widgets::{Block, Borders, Widget},
+    style::Style,
+    widgets::{Block, Borders, List, ListItem, StatefulWidget, Widget},
 };
 
 use crate::{
-    models::coffee::Coffee,
+    models::coffee::CoffeeSummary,
     presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
-        state::coffee_varieties_state::CoffeeVarietiesState,
+        state::coffee_varieties_state::CoffeeVarietiesState, theme::color_scheme::ColorScheme,
     },
 };
 
 pub struct CoffeeVarieties {
-    pub current_items: Vec<Coffee>,
+    pub current_items: Vec<CoffeeSummary>,
     pub current_page: i64,
     pub page_size: i64,
     pub total_pages: i64,
@@ -61,5 +63,25 @@ impl Page for CoffeeVarieties {
             Layout::horizontal([Constraint::Fill(1), Constraint::Fill(2)]).areas(area);
 
         Block::new().borders(Borders::RIGHT).render(list_area, buf);
+
+        let list = List::new(self.current_items.iter().map(|item: &CoffeeSummary| {
+            ListItem::from(format!(
+                " {} by {} - {} {}",
+                item.name.as_deref().unwrap_or("Coffee"),
+                item.brand,
+                item.process_type.capitalize(),
+                item.variety_name
+            ))
+        }))
+        .style(Style::default().fg(ColorScheme::DARK_IRIS))
+        .highlight_symbol(" >")
+        .highlight_style(
+            Style::default()
+                .bold()
+                .fg(ColorScheme::CHICORY_COFFEE)
+                .bg(ColorScheme::DARK_IRIS),
+        );
+
+        StatefulWidget::render(list, list_area, buf, &mut state.list_state);
     }
 }

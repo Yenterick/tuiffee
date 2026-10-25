@@ -7,20 +7,44 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::presentation::{
-    components::{confirmation_modal::ConfirmationModal, outline::Outline},
-    events::{confirmation_choice::ConfirmationChoice, pages::Pages, screen_action::ScreenAction},
-    pages::{coffee_varieties::CoffeeVarieties, home::Home, page::Page},
-    state::app_state::AppState,
-    theme::color_scheme::ColorScheme,
+use crate::{
+    config::db::{DbError, establish_connection},
+    presentation::{
+        components::{confirmation_modal::ConfirmationModal, outline::Outline},
+        events::{
+            confirmation_choice::ConfirmationChoice, pages::Pages, screen_action::ScreenAction,
+        },
+        pages::{coffee_varieties::CoffeeVarieties, home::Home, page::Page},
+        state::app_state::AppState,
+        theme::color_scheme::ColorScheme,
+    },
+    services::coffee_service::CoffeeService,
 };
 
-pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
+pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
     let mut app_state = AppState::new();
     let mut home_page: Home = Home::new();
     let mut coffee_varieties_page = CoffeeVarieties::new();
 
+    let mut conn = establish_connection()?;
+
     loop {
+        let size = terminal.size()?;
+
+        let calculated_page_size = size.height.saturating_sub(2).max(1) as i64;
+
+        if app_state.current_page == Pages::CoffeeVarieties
+            && coffee_varieties_page.page_size != calculated_page_size
+        {
+            coffee_varieties_page.page_size = calculated_page_size;
+
+            coffee_varieties_page.current_items = CoffeeService::list(
+                &mut conn,
+                coffee_varieties_page.current_page as usize,
+                coffee_varieties_page.page_size as usize,
+            )?;
+        }
+
         terminal.draw(|frame: &mut Frame<'_>| {
             render(
                 frame,

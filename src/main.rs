@@ -9,7 +9,7 @@ mod presentation;
 mod repositories;
 mod services;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
     color_eyre::install()?;

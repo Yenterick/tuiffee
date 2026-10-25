@@ -97,7 +97,6 @@ impl Page for Home {
 
         let logo_width = lines.iter().map(Line::width).max().unwrap_or(0) as u16;
         let logo_height = lines.len() as u16;
-        // highlight symbol + leading space + longest option + trailing space
         let list_width = options.iter().map(|option| option.len()).max().unwrap_or(0) as u16
             + highlight_symbol.len() as u16
             + 2;
