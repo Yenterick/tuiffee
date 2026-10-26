@@ -31,7 +31,7 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
     loop {
         let size = terminal.size()?;
 
-        let calculated_page_size = size.height.saturating_sub(2).max(1) as i64;
+        let calculated_page_size = size.height.saturating_sub(4).max(1) as i64;
 
         if app_state.current_page == Pages::CoffeeVarieties
             && coffee_varieties_page.page_size != calculated_page_size
@@ -43,6 +43,11 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                 coffee_varieties_page.current_page as usize,
                 coffee_varieties_page.page_size as usize,
             )?;
+
+            coffee_varieties_page.current_item = Some(CoffeeService::find(
+                &mut conn,
+                coffee_varieties_page.current_items[0].id.unwrap_or(0),
+            )?);
         }
 
         terminal.draw(|frame: &mut Frame<'_>| {
@@ -82,6 +87,29 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                         .handle_key(key, &mut app_state.coffee_varieties_state)
                     {
                         ScreenAction::Back => app_state.current_page = Pages::Home,
+
+                        ScreenAction::LoadId(id) => {
+                            coffee_varieties_page.current_item =
+                                Some(CoffeeService::find(&mut conn, id)?)
+                        }
+
+                        ScreenAction::NextPage => {
+                            coffee_varieties_page.current_page += 1;
+                            coffee_varieties_page.current_items = CoffeeService::list(
+                                &mut conn,
+                                coffee_varieties_page.current_page as usize,
+                                coffee_varieties_page.page_size as usize,
+                            )?;
+                        }
+
+                        ScreenAction::PreviousPage => {
+                            coffee_varieties_page.current_page -= 1;
+                            coffee_varieties_page.current_items = CoffeeService::list(
+                                &mut conn,
+                                coffee_varieties_page.current_page as usize,
+                                coffee_varieties_page.page_size as usize,
+                            )?;
+                        }
 
                         _ => {}
                     }

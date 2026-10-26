@@ -8,4 +8,5 @@ pub enum ScreenAction {
     GoTo(Pages),
     NextPage,
     PreviousPage,
+    LoadId(i32),
 }

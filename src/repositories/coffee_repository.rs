@@ -20,6 +20,7 @@ impl CoffeeRepository {
             .offset(records_to_skip as i64)
             .inner_join(variety::table)
             .select((
+                coffee::id,
                 coffee::brand,
                 coffee::name,
                 coffee::process_type,

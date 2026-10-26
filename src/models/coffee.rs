@@ -18,6 +18,7 @@ pub struct Coffee {
 
 #[derive(Queryable)]
 pub struct CoffeeSummary {
+    pub id: Option<i32>,
     pub brand: String,
     pub name: Option<String>,
     pub process_type: String,
