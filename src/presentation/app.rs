@@ -31,7 +31,7 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
     loop {
         let size = terminal.size()?;
 
-        let calculated_page_size = size.height.saturating_sub(4).max(1) as i64;
+        let calculated_page_size = size.height.saturating_sub(8).max(1) as i64;
 
         if app_state.current_page == Pages::CoffeeVarieties
             && coffee_varieties_page.page_size != calculated_page_size

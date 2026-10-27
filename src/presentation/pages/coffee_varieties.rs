@@ -3,7 +3,8 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    style::Style,
+    style::{Style, Stylize},
+    text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, StatefulWidget, Widget},
 };
 
@@ -45,54 +46,68 @@ impl Page for CoffeeVarieties {
     type State = CoffeeVarietiesState;
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
-        match key.code {
-            KeyCode::Char('A') => {
-                state.add_coffee_variety_modal = Some(AddCoffeeVarietyModal::new());
-                state.add_coffee_variety_modal_state = Some(AddCoffeeVarietyModalState::new());
-                ScreenAction::LoadVarieties
-            }
+        if let Some(modal) = &mut state.add_coffee_variety_modal
+            && let Some(modal_state) = &mut state.add_coffee_variety_modal_state
+        {
+            match modal.handle_key(key, modal_state) {
+                ScreenAction::Back => {
+                    state.add_coffee_variety_modal = None;
+                    state.add_coffee_variety_modal_state = None;
+                    ScreenAction::None
+                }
 
-            KeyCode::Char('j') => {
-                state.list_state.select_next();
-                if state.list_state.selected().unwrap_or(0) < self.current_items.len() {
+                _ => ScreenAction::None,
+            }
+        } else {
+            match key.code {
+                KeyCode::Char('A') => {
+                    state.add_coffee_variety_modal = Some(AddCoffeeVarietyModal::new());
+                    state.add_coffee_variety_modal_state = Some(AddCoffeeVarietyModalState::new());
+                    ScreenAction::LoadVarieties
+                }
+
+                KeyCode::Char('j') => {
+                    state.list_state.select_next();
+                    if state.list_state.selected().unwrap_or(0) < self.current_items.len() {
+                        ScreenAction::LoadId(
+                            self.current_items[state.list_state.selected().unwrap_or(0)]
+                                .id
+                                .unwrap_or(0),
+                        )
+                    } else {
+                        ScreenAction::None
+                    }
+                }
+
+                KeyCode::Char('k') => {
+                    state.list_state.select_previous();
                     ScreenAction::LoadId(
                         self.current_items[state.list_state.selected().unwrap_or(0)]
                             .id
                             .unwrap_or(0),
                     )
-                } else {
-                    ScreenAction::None
                 }
-            }
 
-            KeyCode::Char('k') => {
-                state.list_state.select_previous();
-                ScreenAction::LoadId(
-                    self.current_items[state.list_state.selected().unwrap_or(0)]
-                        .id
-                        .unwrap_or(0),
-                )
-            }
-
-            KeyCode::Char('h') => {
-                if self.current_page > 1 {
-                    ScreenAction::PreviousPage
-                } else {
-                    ScreenAction::None
+                KeyCode::Char('h') => {
+                    if self.current_page > 1 {
+                        ScreenAction::PreviousPage
+                    } else {
+                        ScreenAction::None
+                    }
                 }
-            }
 
-            KeyCode::Char('l') => {
-                if self.current_items.len() == self.page_size as usize {
-                    ScreenAction::NextPage
-                } else {
-                    ScreenAction::None
+                KeyCode::Char('l') => {
+                    if self.current_items.len() == self.page_size as usize {
+                        ScreenAction::NextPage
+                    } else {
+                        ScreenAction::None
+                    }
                 }
+
+                KeyCode::Char('q') => ScreenAction::Back,
+
+                _ => ScreenAction::None,
             }
-
-            KeyCode::Char('q') => ScreenAction::Back,
-
-            _ => ScreenAction::None,
         }
     }
 
@@ -102,8 +117,13 @@ impl Page for CoffeeVarieties {
 
         Block::new().borders(Borders::RIGHT).render(list_area, buf);
 
-        let [inner_list, bottom_title] =
-            Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(list_area);
+        let [inner_list, bottom_title, add_button, _] = Layout::vertical([
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .areas(list_area);
 
         let list = List::new(self.current_items.iter().map(|item: &CoffeeSummary| {
             ListItem::from(format!(
@@ -145,6 +165,17 @@ impl Page for CoffeeVarieties {
             .centered()
             .style(Style::default().bold())
             .render(bottom_title, buf);
+
+        Line::from_iter([
+            Span::from("Press "),
+            Span::from("'A'")
+                .bold()
+                .style(Style::default().bg(ColorScheme::DARK_IRIS))
+                .fg(ColorScheme::CHICORY_COFFEE),
+            Span::from(" to Add a New Coffee "),
+        ])
+        .centered()
+        .render(add_button, buf);
 
         if let Some(modal) = &state.add_coffee_variety_modal
             && let Some(state) = &mut state.add_coffee_variety_modal_state

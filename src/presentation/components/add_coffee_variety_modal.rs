@@ -1,7 +1,7 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Rect},
+    layout::{Alignment, Constraint, Rect},
     style::{Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, BorderType, Clear, Widget},
@@ -33,6 +33,8 @@ impl Page for AddCoffeeVarietyModal {
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
         match key.code {
+            KeyCode::Char('q') => ScreenAction::Back,
+
             _ => ScreenAction::None,
         }
     }
@@ -47,25 +49,32 @@ impl Page for AddCoffeeVarietyModal {
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
             .title(
-                Line::from_iter([
-                    Span::from(" ^k "),
-                    Span::from("Up ")
-                        .bold()
-                        .fg(ColorScheme::CHICORY_COFFEE)
-                        .bg(ColorScheme::DARK_IRIS),
-                ])
-                .centered(),
+                Line::from("Add a New Coffee ")
+                    .bold()
+                    .alignment(Alignment::Right),
             )
-            .title_bottom(
-                Line::from_iter([
-                    Span::from(" ^j "),
-                    Span::from("Down ")
-                        .bold()
-                        .fg(ColorScheme::CHICORY_COFFEE)
-                        .bg(ColorScheme::DARK_IRIS),
-                ])
-                .centered(),
-            )
+            .title_bottom(Line::from_iter([
+                Span::from(" q "),
+                Span::from("back ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^k "),
+                Span::from("up ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^j "),
+                Span::from("down ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ↵ "),
+                Span::from("confirm ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+            ]))
             .render(centered_area, buf);
     }
 }
