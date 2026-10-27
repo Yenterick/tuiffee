@@ -9,4 +9,5 @@ pub enum ScreenAction {
     NextPage,
     PreviousPage,
     LoadId(i32),
+    LoadVarieties,
 }

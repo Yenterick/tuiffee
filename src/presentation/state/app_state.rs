@@ -1,5 +1,7 @@
 use crate::presentation::{
-    components::confirmation_modal::ConfirmationModal,
+    components::{
+        add_coffee_variety_modal::AddCoffeeVarietyModal, confirmation_modal::ConfirmationModal,
+    },
     events::pages::Pages,
     state::{
         add_coffee_variety_modal_state::AddCoffeeVarietyModalState,
@@ -12,7 +14,6 @@ pub struct AppState {
     pub confirmation_modal: Option<ConfirmationModal>,
     pub home_state: HomeState,
     pub coffee_varieties_state: CoffeeVarietiesState,
-    pub add_coffee_varieties_modal_state: Option<AddCoffeeVarietyModalState>,
 }
 
 impl AppState {
@@ -22,7 +23,6 @@ impl AppState {
             confirmation_modal: None,
             home_state: HomeState::new(),
             coffee_varieties_state: CoffeeVarietiesState::new(),
-            add_coffee_varieties_modal_state: None,
         }
     }
 }

@@ -8,7 +8,7 @@ use ratatui::{
 };
 
 use crate::{
-    config::db::{DbError, establish_connection},
+    config::db::establish_connection,
     presentation::{
         components::{confirmation_modal::ConfirmationModal, outline::Outline},
         events::{
@@ -18,7 +18,7 @@ use crate::{
         state::app_state::AppState,
         theme::color_scheme::ColorScheme,
     },
-    services::coffee_service::CoffeeService,
+    services::{coffee_service::CoffeeService, variety_service::VarietyService},
 };
 
 pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
@@ -109,6 +109,14 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                                 coffee_varieties_page.current_page as usize,
                                 coffee_varieties_page.page_size as usize,
                             )?;
+                        }
+
+                        ScreenAction::LoadVarieties => {
+                            if let Some(modal) =
+                                &mut app_state.coffee_varieties_state.add_coffee_variety_modal
+                            {
+                                modal.varieties = VarietyService::list_varieties(&mut conn)?;
+                            }
                         }
 
                         _ => {}

@@ -2,7 +2,9 @@ use crossterm::event::KeyEvent;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    widgets::{Clear, Widget},
+    style::{Modifier, Style, Stylize},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Clear, Widget},
 };
 
 use crate::{
@@ -10,6 +12,7 @@ use crate::{
     presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_coffee_variety_modal_state::AddCoffeeVarietyModalState,
+        theme::color_scheme::ColorScheme,
     },
 };
 
@@ -38,5 +41,31 @@ impl Page for AddCoffeeVarietyModal {
         let centered_area = area.centered(Constraint::Percentage(50), Constraint::Percentage(50));
 
         Clear.render(centered_area, buf);
+
+        Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from_iter([
+                    Span::from(" ^k "),
+                    Span::from("Up ")
+                        .bold()
+                        .fg(ColorScheme::CHICORY_COFFEE)
+                        .bg(ColorScheme::DARK_IRIS),
+                ])
+                .centered(),
+            )
+            .title_bottom(
+                Line::from_iter([
+                    Span::from(" ^j "),
+                    Span::from("Down ")
+                        .bold()
+                        .fg(ColorScheme::CHICORY_COFFEE)
+                        .bg(ColorScheme::DARK_IRIS),
+                ])
+                .centered(),
+            )
+            .render(centered_area, buf);
     }
 }

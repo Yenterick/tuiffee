@@ -11,15 +11,19 @@ use crate::{
     models::coffee::{Coffee, CoffeeSummary},
     presentation::{
         components::add_coffee_variety_modal::AddCoffeeVarietyModal,
-        events::screen_action::ScreenAction, pages::page::Page,
-        state::coffee_varieties_state::CoffeeVarietiesState, theme::color_scheme::ColorScheme,
+        events::screen_action::ScreenAction,
+        pages::page::Page,
+        state::{
+            add_coffee_variety_modal_state::AddCoffeeVarietyModalState,
+            coffee_varieties_state::CoffeeVarietiesState,
+        },
+        theme::color_scheme::ColorScheme,
     },
 };
 
 pub struct CoffeeVarieties {
     pub current_item: Option<Coffee>,
     pub current_items: Vec<CoffeeSummary>,
-    pub add_coffee_variety_modal: Option<AddCoffeeVarietyModal>,
     pub current_page: i64,
     pub page_size: i64,
     pub total_pages: i64,
@@ -30,7 +34,6 @@ impl CoffeeVarieties {
         Self {
             current_item: None,
             current_items: Vec::new(),
-            add_coffee_variety_modal: None,
             current_page: 1,
             page_size: 10,
             total_pages: 1,
@@ -43,6 +46,12 @@ impl Page for CoffeeVarieties {
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
         match key.code {
+            KeyCode::Char('A') => {
+                state.add_coffee_variety_modal = Some(AddCoffeeVarietyModal::new());
+                state.add_coffee_variety_modal_state = Some(AddCoffeeVarietyModalState::new());
+                ScreenAction::LoadVarieties
+            }
+
             KeyCode::Char('j') => {
                 state.list_state.select_next();
                 if state.list_state.selected().unwrap_or(0) < self.current_items.len() {
@@ -136,5 +145,11 @@ impl Page for CoffeeVarieties {
             .centered()
             .style(Style::default().bold())
             .render(bottom_title, buf);
+
+        if let Some(modal) = &state.add_coffee_variety_modal
+            && let Some(state) = &mut state.add_coffee_variety_modal_state
+        {
+            modal.render(area, buf, state);
+        }
     }
 }
