@@ -1,10 +1,10 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
     style::{Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, BorderType, Clear, Widget},
+    widgets::{Block, BorderType, Clear, Paragraph, Widget},
 };
 
 use crate::{
@@ -33,7 +33,7 @@ impl Page for AddCoffeeVarietyModal {
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
         match (key.code, key.modifiers) {
-            (KeyCode::Char('q'), KeyModifiers::CONTROL) => ScreenAction::Back,
+            (KeyCode::Esc, _) => ScreenAction::Back,
 
             (KeyCode::Char('j'), KeyModifiers::CONTROL) => {
                 if state.list_state.selected().unwrap_or(0) < 6 {
@@ -92,7 +92,7 @@ impl Page for AddCoffeeVarietyModal {
                     .alignment(Alignment::Right),
             )
             .title_bottom(Line::from_iter([
-                Span::from(" q "),
+                Span::from(" esc "),
                 Span::from("back ")
                     .bold()
                     .fg(ColorScheme::DARK_IRIS)
@@ -115,7 +115,7 @@ impl Page for AddCoffeeVarietyModal {
             ]))
             .render(centered_area, buf);
 
-        Block::bordered()
+        let brand_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -134,10 +134,13 @@ impl Page for AddCoffeeVarietyModal {
                         })
                         .bold(),
                 ),
-            )
-            .render(brand_area, buf);
+            );
 
-        Block::bordered()
+        Line::from(state.brand_buffer.clone()).render(brand_area.inner(Margin::from(0)), buf);
+
+        brand_block.render(brand_area, buf);
+
+        let name_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -159,10 +162,11 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(name_area, buf);
+            );
 
-        Block::bordered()
+        name_block.render(name_area, buf);
+
+        let descriptive_notes_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -184,10 +188,11 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(descriptive_notes_area, buf);
+            );
 
-        Block::bordered()
+        descriptive_notes_block.render(descriptive_notes_area, buf);
+
+        let location_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -209,10 +214,11 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(location_area, buf);
+            );
 
-        Block::bordered()
+        location_block.render(location_area, buf);
+
+        let roast_level_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -234,10 +240,11 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(roast_level_area, buf);
+            );
 
-        Block::bordered()
+        roast_level_block.render(roast_level_area, buf);
+
+        let proccess_type_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -259,10 +266,11 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(process_type_area, buf);
+            );
 
-        Block::bordered()
+        proccess_type_block.render(process_type_area, buf);
+
+        let variety_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
@@ -284,7 +292,8 @@ impl Page for AddCoffeeVarietyModal {
                             })
                             .bold(),
                     ),
-            )
-            .render(variety_list_area, buf);
+            );
+
+        variety_block.render(variety_list_area, buf)
     }
 }

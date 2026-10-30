@@ -46,68 +46,74 @@ impl Page for CoffeeVarieties {
     type State = CoffeeVarietiesState;
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
-        if let Some(modal) = &mut state.add_coffee_variety_modal
+        let modal_action = if let Some(modal) = &mut state.add_coffee_variety_modal
             && let Some(modal_state) = &mut state.add_coffee_variety_modal_state
         {
-            match modal.handle_key(key, modal_state) {
+            Some(modal.handle_key(key, modal_state))
+        } else {
+            None
+        };
+
+        if let Some(action) = modal_action {
+            return match action {
                 ScreenAction::Back => {
                     state.add_coffee_variety_modal = None;
                     state.add_coffee_variety_modal_state = None;
+
                     ScreenAction::None
                 }
-
                 _ => ScreenAction::None,
+            };
+        }
+
+        match key.code {
+            KeyCode::Char('A') => {
+                state.add_coffee_variety_modal = Some(AddCoffeeVarietyModal::new());
+                state.add_coffee_variety_modal_state = Some(AddCoffeeVarietyModalState::new());
+                ScreenAction::LoadVarieties
             }
-        } else {
-            match key.code {
-                KeyCode::Char('A') => {
-                    state.add_coffee_variety_modal = Some(AddCoffeeVarietyModal::new());
-                    state.add_coffee_variety_modal_state = Some(AddCoffeeVarietyModalState::new());
-                    ScreenAction::LoadVarieties
-                }
 
-                KeyCode::Char('j') => {
-                    state.list_state.select_next();
-                    if state.list_state.selected().unwrap_or(0) < self.current_items.len() {
-                        ScreenAction::LoadId(
-                            self.current_items[state.list_state.selected().unwrap_or(0)]
-                                .id
-                                .unwrap_or(0),
-                        )
-                    } else {
-                        ScreenAction::None
-                    }
-                }
-
-                KeyCode::Char('k') => {
-                    state.list_state.select_previous();
+            KeyCode::Char('j') => {
+                state.list_state.select_next();
+                if state.list_state.selected().unwrap_or(0) < self.current_items.len() {
                     ScreenAction::LoadId(
                         self.current_items[state.list_state.selected().unwrap_or(0)]
                             .id
                             .unwrap_or(0),
                     )
+                } else {
+                    ScreenAction::None
                 }
-
-                KeyCode::Char('h') => {
-                    if self.current_page > 1 {
-                        ScreenAction::PreviousPage
-                    } else {
-                        ScreenAction::None
-                    }
-                }
-
-                KeyCode::Char('l') => {
-                    if self.current_items.len() == self.page_size as usize {
-                        ScreenAction::NextPage
-                    } else {
-                        ScreenAction::None
-                    }
-                }
-
-                KeyCode::Char('q') => ScreenAction::Back,
-
-                _ => ScreenAction::None,
             }
+
+            KeyCode::Char('k') => {
+                state.list_state.select_previous();
+                ScreenAction::LoadId(
+                    self.current_items[state.list_state.selected().unwrap_or(0)]
+                        .id
+                        .unwrap_or(0),
+                )
+            }
+
+            KeyCode::Char('h') => {
+                if self.current_page > 1 {
+                    ScreenAction::PreviousPage
+                } else {
+                    ScreenAction::None
+                }
+            }
+
+            KeyCode::Char('l') => {
+                if self.current_items.len() == self.page_size as usize {
+                    ScreenAction::NextPage
+                } else {
+                    ScreenAction::None
+                }
+            }
+
+            KeyCode::Char('q') => ScreenAction::Back,
+
+            _ => ScreenAction::None,
         }
     }
 
