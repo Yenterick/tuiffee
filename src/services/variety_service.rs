@@ -11,4 +11,9 @@ impl VarietyService {
         let varieties = VarietyRepository::get_all(conn)?;
         Ok(varieties)
     }
+
+    pub fn count_varieties(conn: &mut SqliteConnection) -> Result<i64, DbError> {
+        let total_varieties = VarietyRepository::count(conn)?;
+        Ok(total_varieties)
+    }
 }

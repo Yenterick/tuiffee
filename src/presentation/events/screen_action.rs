@@ -1,4 +1,4 @@
-use crate::presentation::events::pages::Pages;
+use crate::{models::coffee::Coffee, presentation::events::pages::Pages};
 
 pub enum ScreenAction {
     None,
@@ -8,6 +8,8 @@ pub enum ScreenAction {
     GoTo(Pages),
     NextPage,
     PreviousPage,
+    Error(String),
     LoadId(i32),
     LoadVarieties,
+    SaveCoffee(Coffee),
 }

@@ -1,5 +1,6 @@
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
+use diesel::SqliteConnection;
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
@@ -21,6 +22,29 @@ use crate::{
     services::{coffee_service::CoffeeService, variety_service::VarietyService},
 };
 
+fn reload_coffees(
+    terminal_height: u16,
+    page: &mut CoffeeVarieties,
+    conn: &mut SqliteConnection,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let calculated_page_size = terminal_height.saturating_sub(8).max(1) as i64;
+    page.page_size = calculated_page_size;
+
+    page.current_items =
+        CoffeeService::list(conn, page.current_page as usize, page.page_size as usize)?;
+
+    if !page.current_items.is_empty() {
+        page.current_item = Some(CoffeeService::find(
+            conn,
+            page.current_items[0].id.unwrap_or(0),
+        )?);
+    } else {
+        page.current_item = None;
+    }
+
+    Ok(())
+}
+
 pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
     let mut app_state = AppState::new();
     let mut home_page: Home = Home::new();
@@ -30,24 +54,12 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
 
     loop {
         let size = terminal.size()?;
-
         let calculated_page_size = size.height.saturating_sub(8).max(1) as i64;
 
         if app_state.current_page == Pages::CoffeeVarieties
             && coffee_varieties_page.page_size != calculated_page_size
         {
-            coffee_varieties_page.page_size = calculated_page_size;
-
-            coffee_varieties_page.current_items = CoffeeService::list(
-                &mut conn,
-                coffee_varieties_page.current_page as usize,
-                coffee_varieties_page.page_size as usize,
-            )?;
-
-            coffee_varieties_page.current_item = Some(CoffeeService::find(
-                &mut conn,
-                coffee_varieties_page.current_items[0].id.unwrap_or(0),
-            )?);
+            reload_coffees(size.height, &mut coffee_varieties_page, &mut conn)?;
         }
 
         terminal.draw(|frame: &mut Frame<'_>| {
@@ -116,7 +128,19 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                                 &mut app_state.coffee_varieties_state.add_coffee_variety_modal
                             {
                                 modal.varieties = VarietyService::list_varieties(&mut conn)?;
+                                modal.total_varieties = VarietyService::count_varieties(&mut conn)?;
                             }
+                        }
+
+                        ScreenAction::SaveCoffee(coffee) => {
+                            CoffeeService::create(&mut conn, &coffee)?;
+
+                            let current_size = terminal.size()?;
+                            reload_coffees(
+                                current_size.height,
+                                &mut coffee_varieties_page,
+                                &mut conn,
+                            )?;
                         }
 
                         _ => {}

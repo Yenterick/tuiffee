@@ -62,6 +62,13 @@ impl Page for CoffeeVarieties {
 
                     ScreenAction::None
                 }
+
+                ScreenAction::SaveCoffee(coffee) => {
+                    state.add_coffee_variety_modal = None;
+                    state.add_coffee_variety_modal_state = None;
+                    ScreenAction::SaveCoffee(coffee)
+                }
+
                 _ => ScreenAction::None,
             };
         }

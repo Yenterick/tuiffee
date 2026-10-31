@@ -1,14 +1,16 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, BorderType, Clear, Paragraph, Widget},
+    widgets::{Block, BorderType, Clear, Widget},
 };
 
 use crate::{
-    models::variety::Variety,
+    models::{
+        coffee::Coffee, process_type::ProcessType, roasting_level::RoastingLevel, variety::Variety,
+    },
     presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_coffee_variety_modal_state::AddCoffeeVarietyModalState,
@@ -18,12 +20,14 @@ use crate::{
 
 pub struct AddCoffeeVarietyModal {
     pub varieties: Vec<Variety>,
+    pub total_varieties: i64,
 }
 
 impl AddCoffeeVarietyModal {
     pub fn new() -> Self {
         Self {
             varieties: Vec::new(),
+            total_varieties: 0,
         }
     }
 }
@@ -47,6 +51,147 @@ impl Page for AddCoffeeVarietyModal {
                     state.list_state.select_previous();
                 }
                 ScreenAction::None
+            }
+
+            (KeyCode::Char(char), (keycode)) => match state.list_state.selected().unwrap_or(0) {
+                0 => {
+                    if state.brand_buffer.len() < 64 {
+                        state.brand_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                1 => {
+                    if state.name_buffer.len() < 64 {
+                        state.name_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                2 => {
+                    if state.descriptive_notes_buffer.len() < 64 {
+                        state.descriptive_notes_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                3 => {
+                    if state.location_buffer.len() < 64 {
+                        state.location_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                4 => {
+                    if char == 'l' && keycode == KeyModifiers::CONTROL {
+                        if state.roast_level_list_state.selected().unwrap_or(0) < 4 - 1 {
+                            state.roast_level_list_state.select_next();
+                        }
+                    } else if char == 'h' && keycode == KeyModifiers::CONTROL {
+                        if state.roast_level_list_state.selected().unwrap_or(0) > 0 {
+                            state.roast_level_list_state.select_previous();
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                5 => {
+                    if char == 'l' && keycode == KeyModifiers::CONTROL {
+                        if state.process_type_list_state.selected().unwrap_or(0) < 4 - 1 {
+                            state.process_type_list_state.select_next();
+                        }
+                    } else if char == 'h' && keycode == KeyModifiers::CONTROL {
+                        if state.process_type_list_state.selected().unwrap_or(0) > 0 {
+                            state.process_type_list_state.select_previous();
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                6 => {
+                    if char == 'l' && keycode == KeyModifiers::CONTROL {
+                        if state.variety_list_state.selected().unwrap_or(0)
+                            < self.total_varieties as usize - 1
+                        {
+                            state.variety_list_state.select_next();
+                        }
+                    } else if char == 'h' && keycode == KeyModifiers::CONTROL {
+                        if state.variety_list_state.selected().unwrap_or(0) > 0 {
+                            state.variety_list_state.select_previous();
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                _ => ScreenAction::None,
+            },
+
+            (KeyCode::Backspace, _) => match state.list_state.selected().unwrap_or(0) {
+                0 => {
+                    state.brand_buffer.pop();
+                    ScreenAction::None
+                }
+
+                1 => {
+                    state.name_buffer.pop();
+                    ScreenAction::None
+                }
+
+                2 => {
+                    state.descriptive_notes_buffer.pop();
+                    ScreenAction::None
+                }
+
+                3 => {
+                    state.location_buffer.pop();
+                    ScreenAction::None
+                }
+
+                _ => ScreenAction::None,
+            },
+
+            (KeyCode::Enter, _) => {
+                if !state.brand_buffer.is_empty() {
+                    ScreenAction::SaveCoffee(Coffee::from(
+                        state.brand_buffer.clone(),
+                        if state.name_buffer.is_empty() {
+                            None
+                        } else {
+                            Some(state.name_buffer.clone())
+                        },
+                        match state.roast_level_list_state.selected().unwrap_or(0) {
+                            0 => RoastingLevel::Light,
+                            1 => RoastingLevel::Medium,
+                            2 => RoastingLevel::MediumDark,
+                            3 => RoastingLevel::Dark,
+
+                            _ => RoastingLevel::Medium,
+                        },
+                        match state.process_type_list_state.selected().unwrap_or(0) {
+                            0 => ProcessType::Washed,
+                            1 => ProcessType::Honey,
+                            2 => ProcessType::Natural,
+                            3 => ProcessType::Culturing,
+
+                            _ => ProcessType::Washed,
+                        },
+                        if state.descriptive_notes_buffer.is_empty() {
+                            None
+                        } else {
+                            Some(state.descriptive_notes_buffer.clone())
+                        },
+                        if state.location_buffer.is_empty() {
+                            None
+                        } else {
+                            Some(state.location_buffer.clone())
+                        },
+                        self.varieties[state.variety_list_state.selected().unwrap_or(0)]
+                            .id
+                            .unwrap_or(0),
+                    ))
+                } else {
+                    ScreenAction::Error(String::from("Please fill all the required fields!"))
+                }
             }
 
             _ => ScreenAction::None,
@@ -97,6 +242,11 @@ impl Page for AddCoffeeVarietyModal {
                     .bold()
                     .fg(ColorScheme::DARK_IRIS)
                     .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^h "),
+                Span::from("left ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
                 Span::from(" ^k "),
                 Span::from("up ")
                     .bold()
@@ -104,6 +254,11 @@ impl Page for AddCoffeeVarietyModal {
                     .bg(ColorScheme::CHICORY_COFFEE),
                 Span::from(" ^j "),
                 Span::from("down ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^l "),
+                Span::from("right ")
                     .bold()
                     .fg(ColorScheme::DARK_IRIS)
                     .bg(ColorScheme::CHICORY_COFFEE),
@@ -136,16 +291,16 @@ impl Page for AddCoffeeVarietyModal {
                 ),
             );
 
-        Line::from(state.brand_buffer.clone()).render(brand_area.inner(Margin::from(0)), buf);
-
+        let brand_inner_block = brand_block.inner(brand_area);
         brand_block.render(brand_area, buf);
+        Line::from(state.brand_buffer.clone()).render(brand_inner_block, buf);
 
         let name_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
             .title(
-                Line::from(" Name ")
+                Line::from(" Name <Optional> ")
                     .bold()
                     .alignment(Alignment::Right)
                     .style(
@@ -164,7 +319,9 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
+        let name_inner_block = name_block.inner(name_area);
         name_block.render(name_area, buf);
+        Line::from(state.name_buffer.clone()).render(name_inner_block, buf);
 
         let descriptive_notes_block = Block::bordered()
             .border_type(BorderType::Plain)
@@ -190,7 +347,10 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
+        let descriptive_notes_inner_block = descriptive_notes_block.inner(descriptive_notes_area);
         descriptive_notes_block.render(descriptive_notes_area, buf);
+        Line::from(state.descriptive_notes_buffer.clone())
+            .render(descriptive_notes_inner_block, buf);
 
         let location_block = Block::bordered()
             .border_type(BorderType::Plain)
@@ -216,7 +376,9 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
+        let location_inner_block = location_block.inner(location_area);
         location_block.render(location_area, buf);
+        Line::from(state.location_buffer.clone()).render(location_inner_block, buf);
 
         let roast_level_block = Block::bordered()
             .border_type(BorderType::Plain)
@@ -242,7 +404,16 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
+        let roast_level_inner_block = roast_level_block.inner(roast_level_area);
         roast_level_block.render(roast_level_area, buf);
+        Line::from(match state.roast_level_list_state.selected().unwrap_or(0) {
+            0 => String::from(" Light > "),
+            1 => String::from(" < Medium > "),
+            2 => String::from(" < Medium-Dark > "),
+            3 => String::from(" < Dark "),
+            _ => String::from(" Unavailable! "),
+        })
+        .render(roast_level_inner_block, buf);
 
         let proccess_type_block = Block::bordered()
             .border_type(BorderType::Plain)
@@ -268,7 +439,18 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
+        let process_type_inner_block = proccess_type_block.inner(process_type_area);
         proccess_type_block.render(process_type_area, buf);
+        Line::from(
+            match state.process_type_list_state.selected().unwrap_or(0) {
+                0 => String::from(" Washed > "),
+                1 => String::from(" < Honey > "),
+                2 => String::from(" < Natural > "),
+                3 => String::from(" < Culturing "),
+                _ => String::from(" Unavailable! "),
+            },
+        )
+        .render(process_type_inner_block, buf);
 
         let variety_block = Block::bordered()
             .border_type(BorderType::Plain)
@@ -294,6 +476,29 @@ impl Page for AddCoffeeVarietyModal {
                     ),
             );
 
-        variety_block.render(variety_list_area, buf)
+        let variety_inner_block = variety_block.inner(variety_list_area);
+        variety_block.render(variety_list_area, buf);
+        Line::from_iter([
+            Span::from(if state.variety_list_state.selected().unwrap_or(0) > 0 {
+                String::from(" < ")
+            } else {
+                String::from(" ")
+            }),
+            Span::from(
+                self.varieties[state.variety_list_state.selected().unwrap_or(0)]
+                    .name
+                    .clone(),
+            ),
+            Span::from(
+                if state.variety_list_state.selected().unwrap_or(0)
+                    < self.total_varieties as usize - 1
+                {
+                    String::from(" > ")
+                } else {
+                    String::from(" ")
+                },
+            ),
+        ])
+        .render(variety_inner_block, buf);
     }
 }

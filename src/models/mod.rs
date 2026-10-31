@@ -5,4 +5,6 @@ pub mod method;
 pub mod pouring;
 pub mod preparation_record;
 pub mod preparation_technique;
+pub mod process_type;
+pub mod roasting_level;
 pub mod variety;
