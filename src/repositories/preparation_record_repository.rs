@@ -8,8 +8,16 @@ use diesel::prelude::*;
 pub struct PreparationRecordRepository;
 
 impl PreparationRecordRepository {
-    pub fn get_all(conn: &mut SqliteConnection) -> Result<Vec<PreparationRecordSummary>, DbError> {
+    pub fn get_all(
+        conn: &mut SqliteConnection,
+        page: usize,
+        page_size: usize,
+    ) -> Result<Vec<PreparationRecordSummary>, DbError> {
+        let records_to_skip = (page - 1) * page_size;
+
         preparation_record::table
+            .limit(page_size as i64)
+            .offset(records_to_skip as i64)
             .inner_join(coffee::table)
             .inner_join(method::table)
             .inner_join(preparation_technique::table)

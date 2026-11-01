@@ -6,6 +6,7 @@ use crate::presentation::{
     state::{
         add_coffee_variety_modal_state::AddCoffeeVarietyModalState,
         coffee_varieties_state::CoffeeVarietiesState, home_state::HomeState,
+        preparation_methods_state::PreparationMethodState,
     },
 };
 
@@ -14,6 +15,7 @@ pub struct AppState {
     pub confirmation_modal: Option<ConfirmationModal>,
     pub home_state: HomeState,
     pub coffee_varieties_state: CoffeeVarietiesState,
+    pub preparation_methods_state: PreparationMethodState,
 }
 
 impl AppState {
@@ -23,6 +25,7 @@ impl AppState {
             confirmation_modal: None,
             home_state: HomeState::new(),
             coffee_varieties_state: CoffeeVarietiesState::new(),
+            preparation_methods_state: PreparationMethodState::new(),
         }
     }
 }

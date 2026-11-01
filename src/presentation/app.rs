@@ -15,7 +15,10 @@ use crate::{
         events::{
             confirmation_choice::ConfirmationChoice, pages::Pages, screen_action::ScreenAction,
         },
-        pages::{coffee_varieties::CoffeeVarieties, home::Home, page::Page},
+        pages::{
+            coffee_varieties::CoffeeVarieties, home::Home, page::Page,
+            preparation_methods::PreparationMethods,
+        },
         state::app_state::AppState,
         theme::color_scheme::ColorScheme,
     },
@@ -49,6 +52,7 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
     let mut app_state = AppState::new();
     let mut home_page: Home = Home::new();
     let mut coffee_varieties_page = CoffeeVarieties::new();
+    let mut preparation_methods_page = PreparationMethods::new();
 
     let mut conn = establish_connection()?;
 
@@ -93,6 +97,16 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
 
                     _ => {}
                 },
+
+                Pages::PreparationMethods => {
+                    match preparation_methods_page
+                        .handle_key(key, &mut app_state.preparation_methods_state)
+                    {
+                        ScreenAction::Back => app_state.current_page = Pages::Home,
+
+                        _ => {}
+                    }
+                }
 
                 Pages::CoffeeVarieties => {
                     match coffee_varieties_page
