@@ -1,4 +1,7 @@
-use crate::{models::coffee::Coffee, presentation::events::pages::Pages};
+use crate::{
+    models::{coffee::Coffee, preparation_technique::PreparationTechnique},
+    presentation::events::pages::Pages,
+};
 
 pub enum ScreenAction {
     None,
@@ -12,4 +15,5 @@ pub enum ScreenAction {
     LoadId(i32),
     LoadVarieties,
     SaveCoffee(Coffee),
+    SavePreparationTechnique(PreparationTechnique),
 }
