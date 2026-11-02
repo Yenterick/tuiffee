@@ -13,3 +13,21 @@ pub struct Pouring {
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
+
+impl Pouring {
+    pub fn from(water_g: f32, time_s: i32, sequency: i32) -> Self {
+        Self {
+            id: None,
+            water_g,
+            time_s,
+            sequency,
+            preparation_technique_id: -1,
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    pub fn assign(&mut self, id: i32) {
+        self.preparation_technique_id = id;
+    }
+}

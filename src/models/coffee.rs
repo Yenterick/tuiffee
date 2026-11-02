@@ -36,8 +36,8 @@ impl Coffee {
         descriptive_notes: Option<String>,
         location: Option<String>,
         variety_id: i32,
-    ) -> Coffee {
-        Coffee {
+    ) -> Self {
+        Self {
             id: None,
             brand,
             name,

@@ -8,8 +8,7 @@ use ratatui::{
 };
 
 use crate::{
-    models::{blooming::Blooming, pouring::Pouring},
-    presentation::{
+    config::schema::blooming::sequency, models::{blooming::Blooming, pouring::Pouring}, presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_preparation_technique_modal_state::AddPreparationTechniqueModalState,
         theme::color_scheme::ColorScheme,
@@ -50,6 +49,149 @@ impl Page for AddPreparationTechniqueModal {
                 }
                 ScreenAction::None
             }
+
+            (KeyCode::Char(char), (keycode)) => match state.list_state.selected().unwrap_or(0) {
+                0 => {
+                    if state.name_buffer.len() < 64 {
+                        state.name_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                1 => {
+                    if char == 'l' && keycode == KeyModifiers::CONTROL {
+                        if state.grind_level_list_state.selected().unwrap_or(0) < 7 - 1 {
+                            state.grind_level_list_state.select_next();
+                        }
+                    } else if char == 'h' && keycode == KeyModifiers::CONTROL {
+                        if state.grind_level_list_state.selected().unwrap_or(0) > 0 {
+                            state.grind_level_list_state.select_previous();
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                2 => {
+                    if state.ratio_buffer.len() < 64 && is_valid_int_char(char) {
+                        state.ratio_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                3 => {
+                    if state.people_target_buffer.len() < 64 && is_valid_int_char(char) {
+                        state.people_target_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                4 => {
+                    if state.coffee_g_buffer.len() < 64 && is_valid_float_char(&state.coffee_g_buffer, char) {
+                        state.coffee_g_buffer.push(char);
+                    }
+                    ScreenAction::None
+                }
+
+                5 => {
+                    if char == 'c' && keycode == KeyModifiers::CONTROL {
+                        self.bloomings.push(
+                            Blooming::from(
+                                water_g: state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                                time_s: state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
+                                sequency: self.bloomings.len() + 1
+                            );
+                        ); 
+                    } else {
+                        if state.b_water_g_buffer.len() < 32 && is_valid_float_char(&state.b_water_g_buffer, char) {
+                            state.b_water_g_buffer.push(char);
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                6 => {
+                    if char == 'c' && keycode == KeyModifiers::CONTROL {
+                        self.bloomings.push(
+                            Blooming::from(
+
+                            )
+                        );
+                    } else {
+                        if state.b_time_s_buffer.len() < 32 && is_valid_int_char(char) {
+                            state.b_time_s_buffer.push(char);
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                7 => {
+                    if char == 'c' && keycode == KeyModifiers::CONTROL {
+                        
+                    } else {
+                        if state.p_water_g_buffer.len() < 32 && is_valid_float_char(&state.p_water_g_buffer, char) {
+                            state.p_water_g_buffer.push(char);
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                8 => {
+                    if char == 'c' && keycode == KeyModifiers::CONTROL {
+                        
+                    } else {
+                        if state.p_time_s_buffer.len() < 32 && is_valid_int_char(char) {
+                            state.p_time_s_buffer.push(char);
+                        }
+                    }
+                    ScreenAction::None
+                }
+
+                _ => ScreenAction::None,
+            },
+
+            (KeyCode::Backspace, _) => match state.list_state.selected().unwrap_or(0) {
+                0 => {
+                    state.name_buffer.pop();
+                    ScreenAction::None
+                }
+
+                2 => {
+                    state.ratio_buffer.pop();
+                    ScreenAction::None
+                }
+
+                3 => {
+                    state.people_target_buffer.pop();
+                    ScreenAction::None
+                }
+
+                4 => {
+                    state.coffee_g_buffer.pop();
+                    ScreenAction::None
+                }
+
+                5 => {
+                    state.b_water_g_buffer.pop();
+                    ScreenAction::None
+                }
+
+                6 => {
+                    state.b_time_s_buffer.pop();
+                    ScreenAction::None
+                }
+
+                7 => {
+                    state.p_water_g_buffer.pop();
+                    ScreenAction::None
+                }
+
+                8 => {
+                    state.p_time_s_buffer.pop();
+                    ScreenAction::None
+                }
+
+                _ => ScreenAction::None,
+            },
 
             _ => ScreenAction::None,
         }
@@ -268,7 +410,7 @@ impl Page for AddPreparationTechniqueModal {
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(8)])
                 .areas(people_target_inner_block);
 
-        Line::from(state.people_target_buffer.clone()).render(people_target_inner_block, buf);
+        Line::from(state.people_target_buffer.clone()).render(people_target_text_area, buf);
         Line::from(" people ")
             .style(
                 Style::default()
@@ -316,13 +458,13 @@ impl Page for AddPreparationTechniqueModal {
             )
             .render(coffee_g_unit_area, buf);
 
-        let [b_water_area, _, b_coffee_area] = Layout::horizontal([
+        let [b_water_area, _, b_time_area] = Layout::horizontal([
             Constraint::Fill(1),
             Constraint::Length(1),
             Constraint::Fill(1),
         ])
         .areas(blooming_area);
-        let [p_water_area, _, p_coffee_area] = Layout::horizontal([
+        let [p_water_area, _, p_time_area] = Layout::horizontal([
             Constraint::Fill(1),
             Constraint::Length(1),
             Constraint::Fill(1),
@@ -352,12 +494,12 @@ impl Page for AddPreparationTechniqueModal {
                     ),
             );
 
-        let b_coffee_block = Block::bordered()
+        let b_time_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
             .title(
-                Line::from(" Blooming Coffee ")
+                Line::from(" Blooming Water ")
                     .alignment(Alignment::Right)
                     .style(
                         Style::default()
@@ -398,12 +540,12 @@ impl Page for AddPreparationTechniqueModal {
                     ),
             );
 
-        let p_coffee_block = Block::bordered()
+        let p_time_block = Block::bordered()
             .border_type(BorderType::Plain)
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
             .title(
-                Line::from(" Pouring Coffee ")
+                Line::from(" Pouring Time ")
                     .alignment(Alignment::Right)
                     .style(
                         Style::default()
@@ -422,16 +564,20 @@ impl Page for AddPreparationTechniqueModal {
             );
 
         let b_water_inner_block = b_water_block.inner(b_water_area);
-        let b_coffee_innter_block = b_coffee_block.inner(b_coffee_area);
+        let b_time_inner_block = b_time_block.inner(b_time_area);
 
+        Line::from(state.b_water_g_buffer.clone()).render(b_water_inner_block, buf);
+        Line::from(state.b_time_s_buffer.clone()).render(b_time_inner_block, buf);
         b_water_block.render(b_water_area, buf);
-        b_coffee_block.render(b_coffee_area, buf);
+        b_time_block.render(b_time_area, buf);
 
         let p_water_inner_block = p_water_block.inner(p_water_area);
-        let p_coffee_innter_block = p_coffee_block.inner(p_coffee_area);
+        let p_time_inner_block = p_time_block.inner(p_time_area);
 
+        Line::from(state.p_water_g_buffer.clone()).render(p_water_inner_block, buf);
+        Line::from(state.p_time_s_buffer.clone()).render(p_time_inner_block, buf);
         p_water_block.render(p_water_area, buf);
-        p_coffee_block.render(p_coffee_area, buf);
+        p_time_block.render(p_time_area, buf);
 
         Block::default()
             .bg(ColorScheme::CHICORY_COFFEE)
@@ -467,4 +613,12 @@ impl Page for AddPreparationTechniqueModal {
             )
             .render(pouring_list_area, buf);
     }
+}
+
+fn is_valid_int_char(c: char) -> bool {
+    c.is_ascii_digit()
+}
+
+fn is_valid_float_char(buffer: &str, c: char) -> bool {
+    c.is_ascii_digit() || (c == '.' && !buffer.contains('.'))
 }
