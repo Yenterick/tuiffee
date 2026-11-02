@@ -46,9 +46,11 @@ impl PreparationTechniqueRepository {
 
         let bloomings = blooming::table
             .filter(blooming::preparation_technique_id.eq(id))
+            .order(blooming::sequency.asc())
             .load::<Blooming>(conn)?;
         let pourings = pouring::table
             .filter(pouring::preparation_technique_id.eq(id))
+            .order(pouring::sequency.asc())
             .load::<Pouring>(conn)?;
 
         Ok(FullPreparationTechnique {

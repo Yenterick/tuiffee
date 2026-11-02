@@ -22,7 +22,10 @@ use crate::{
         state::app_state::AppState,
         theme::color_scheme::ColorScheme,
     },
-    services::{coffee_service::CoffeeService, variety_service::VarietyService},
+    services::{
+        coffee_service::CoffeeService, preparation_technique_service::PreparationTechniqueService,
+        variety_service::VarietyService,
+    },
 };
 
 fn reload_coffees(
@@ -48,11 +51,37 @@ fn reload_coffees(
     Ok(())
 }
 
+fn reload_techniques(
+    terminal_height: u16,
+    page: &mut PreparationMethods,
+    conn: &mut SqliteConnection,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let calculated_page_size = terminal_height.saturating_sub(8).max(1) as i64;
+    page.page_size = calculated_page_size;
+
+    page.current_items = PreparationTechniqueService::list(
+        conn,
+        page.current_page as usize,
+        page.page_size as usize,
+    )?;
+
+    if !page.current_items.is_empty() {
+        page.current_item = Some(PreparationTechniqueService::find(
+            conn,
+            page.current_items[0].id.unwrap_or(0),
+        )?);
+    } else {
+        page.current_item = None;
+    }
+
+    Ok(())
+}
+
 pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
     let mut app_state = AppState::new();
     let mut home_page: Home = Home::new();
-    let mut coffee_varieties_page = CoffeeVarieties::new();
     let mut preparation_methods_page = PreparationMethods::new();
+    let mut coffee_varieties_page = CoffeeVarieties::new();
 
     let mut conn = establish_connection()?;
 
@@ -66,11 +95,18 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
             reload_coffees(size.height, &mut coffee_varieties_page, &mut conn)?;
         }
 
+        if app_state.current_page == Pages::PreparationMethods
+            && preparation_methods_page.page_size != calculated_page_size
+        {
+            reload_techniques(size.height, &mut preparation_methods_page, &mut conn)?;
+        }
+
         terminal.draw(|frame: &mut Frame<'_>| {
             render(
                 frame,
                 &mut app_state,
                 &mut home_page,
+                &mut preparation_methods_page,
                 &mut coffee_varieties_page,
             )
         })?;
@@ -103,6 +139,31 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                         .handle_key(key, &mut app_state.preparation_methods_state)
                     {
                         ScreenAction::Back => app_state.current_page = Pages::Home,
+
+                        ScreenAction::LoadId(id) => {
+                            preparation_methods_page.current_item =
+                                Some(PreparationTechniqueService::find(&mut conn, id)?)
+                        }
+
+                        ScreenAction::NextPage => {
+                            preparation_methods_page.current_page += 1;
+                            preparation_methods_page.current_items =
+                                PreparationTechniqueService::list(
+                                    &mut conn,
+                                    preparation_methods_page.current_page as usize,
+                                    preparation_methods_page.page_size as usize,
+                                )?;
+                        }
+
+                        ScreenAction::PreviousPage => {
+                            preparation_methods_page.current_page -= 1;
+                            preparation_methods_page.current_items =
+                                PreparationTechniqueService::list(
+                                    &mut conn,
+                                    preparation_methods_page.current_page as usize,
+                                    preparation_methods_page.page_size as usize,
+                                )?;
+                        }
 
                         _ => {}
                     }
@@ -187,6 +248,7 @@ fn render(
     frame: &mut Frame,
     app_state: &mut AppState,
     home_page: &mut Home,
+    preparation_methods_page: &mut PreparationMethods,
     coffee_varieties_page: &mut CoffeeVarieties,
 ) {
     let [complete] = Layout::horizontal([Constraint::Fill(1)]).areas(frame.area());
@@ -203,6 +265,12 @@ fn render(
 
     match app_state.current_page {
         Pages::Home => home_page.render(content, frame.buffer_mut(), &mut app_state.home_state),
+
+        Pages::PreparationMethods => preparation_methods_page.render(
+            content,
+            frame.buffer_mut(),
+            &mut app_state.preparation_methods_state,
+        ),
 
         Pages::CoffeeVarieties => coffee_varieties_page.render(
             content,
