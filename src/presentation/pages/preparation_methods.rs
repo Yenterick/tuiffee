@@ -11,8 +11,14 @@ use ratatui::{
 use crate::{
     models::preparation_technique::{FullPreparationTechnique, PreparationTechniqueSummary},
     presentation::{
-        events::screen_action::ScreenAction, pages::page::Page,
-        state::preparation_methods_state::PreparationMethodState, theme::color_scheme::ColorScheme,
+        components::add_preparation_technique_modal::AddPreparationTechniqueModal,
+        events::screen_action::ScreenAction,
+        pages::page::Page,
+        state::{
+            add_preparation_technique_modal_state::AddPreparationTechniqueModalState,
+            preparation_methods_state::PreparationMethodState,
+        },
+        theme::color_scheme::ColorScheme,
     },
 };
 
@@ -40,7 +46,35 @@ impl Page for PreparationMethods {
     type State = PreparationMethodState;
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
+        let modal_action = if let Some(modal) = &mut state.add_preparation_technique_modal
+            && let Some(modal_state) = &mut state.add_preparation_technique_modal_state
+        {
+            Some(modal.handle_key(key, modal_state))
+        } else {
+            None
+        };
+
+        if let Some(action) = modal_action {
+            return match action {
+                ScreenAction::Back => {
+                    state.add_preparation_technique_modal = None;
+                    state.add_preparation_technique_modal_state = None;
+
+                    ScreenAction::None
+                }
+
+                _ => ScreenAction::None,
+            };
+        }
+
         match key.code {
+            KeyCode::Char('A') => {
+                state.add_preparation_technique_modal = Some(AddPreparationTechniqueModal::new());
+                state.add_preparation_technique_modal_state =
+                    Some(AddPreparationTechniqueModalState::new());
+                ScreenAction::None
+            }
+
             KeyCode::Char('q') => ScreenAction::Back,
 
             KeyCode::Char('j') => {
@@ -172,5 +206,11 @@ impl Page for PreparationMethods {
         ])
         .centered()
         .render(add_button, buf);
+
+        if let Some(modal) = &state.add_preparation_technique_modal
+            && let Some(state) = &mut state.add_preparation_technique_modal_state
+        {
+            modal.render(area, buf, state);
+        }
     }
 }

@@ -1,8 +1,10 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    widgets::{Clear, Widget},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Style, Stylize},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Clear, Widget},
 };
 
 use crate::{
@@ -10,6 +12,7 @@ use crate::{
     presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_preparation_technique_modal_state::AddPreparationTechniqueModalState,
+        theme::color_scheme::ColorScheme,
     },
 };
 
@@ -32,12 +35,38 @@ impl Page for AddPreparationTechniqueModal {
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
         match (key.code, key.modifiers) {
+            (KeyCode::Esc, _) => ScreenAction::Back,
+
+            (KeyCode::Char('j'), KeyModifiers::CONTROL) => {
+                if state.list_state.selected().unwrap_or(0) < 8 {
+                    state.list_state.select_next();
+                }
+                ScreenAction::None
+            }
+
+            (KeyCode::Char('k'), KeyModifiers::CONTROL) => {
+                if state.list_state.selected().unwrap_or(0) > 0 {
+                    state.list_state.select_previous();
+                }
+                ScreenAction::None
+            }
+
             _ => ScreenAction::None,
         }
     }
 
     fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let centered_area = area.centered(Constraint::Percentage(50), Constraint::Length(25));
+        let [inputs_area, lists_area] =
+            Layout::horizontal([Constraint::Fill(2), Constraint::Fill(1)]).areas(centered_area);
+
+        let [blooming_list_area, _, pouring_list_area] = Layout::vertical([
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Fill(1),
+        ])
+        .margin(2)
+        .areas(lists_area);
 
         Clear.render(centered_area, buf);
 
@@ -47,6 +76,9 @@ impl Page for AddPreparationTechniqueModal {
             grind_level_area,
             ratio_area,
             people_target_area,
+            coffee_g_area,
+            blooming_area,
+            pouring_area,
             _,
         ] = Layout::vertical([
             Constraint::Fill(1),
@@ -54,9 +86,385 @@ impl Page for AddPreparationTechniqueModal {
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
             Constraint::Fill(1),
         ])
         .margin(1)
-        .areas(centered_area);
+        .areas(inputs_area);
+
+        Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Add a New Preparation Technique ")
+                    .bold()
+                    .alignment(Alignment::Right),
+            )
+            .title_bottom(Line::from_iter([
+                Span::from(" esc "),
+                Span::from("back ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^h "),
+                Span::from("left ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^k "),
+                Span::from("up ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^j "),
+                Span::from("down ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ^l "),
+                Span::from("right ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+                Span::from(" ↵ "),
+                Span::from("confirm ")
+                    .bold()
+                    .fg(ColorScheme::DARK_IRIS)
+                    .bg(ColorScheme::CHICORY_COFFEE),
+            ]))
+            .render(centered_area, buf);
+
+        let name_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Name ").alignment(Alignment::Right).style(
+                    Style::default()
+                        .bg(if state.list_state.selected() == Some(0) {
+                            ColorScheme::CHICORY_COFFEE
+                        } else {
+                            ColorScheme::DARK_IRIS
+                        })
+                        .fg(if state.list_state.selected() == Some(0) {
+                            ColorScheme::DARK_IRIS
+                        } else {
+                            ColorScheme::CHICORY_COFFEE
+                        })
+                        .bold(),
+                ),
+            );
+
+        let name_inner_block = name_block.inner(name_area);
+        name_block.render(name_area, buf);
+        Line::from(state.name_buffer.clone()).render(name_inner_block, buf);
+
+        let grind_level_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Grind Level ")
+                    .bold()
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(1) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(1) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let roast_level_inner_block = grind_level_block.inner(grind_level_area);
+        grind_level_block.render(grind_level_area, buf);
+        Line::from(match state.grind_level_list_state.selected().unwrap_or(0) {
+            0 => String::from(" Extra-coarse > "),
+            1 => String::from(" < Coarse > "),
+            2 => String::from(" < Medium-coarse > "),
+            3 => String::from(" < Medium > "),
+            4 => String::from(" < Medium-fine > "),
+            5 => String::from(" < Fine > "),
+            6 => String::from(" < Extra-fine "),
+            _ => String::from(" Unavailable! "),
+        })
+        .render(roast_level_inner_block, buf);
+
+        let ratio_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Ratio ").alignment(Alignment::Right).style(
+                    Style::default()
+                        .bg(if state.list_state.selected() == Some(2) {
+                            ColorScheme::CHICORY_COFFEE
+                        } else {
+                            ColorScheme::DARK_IRIS
+                        })
+                        .fg(if state.list_state.selected() == Some(2) {
+                            ColorScheme::DARK_IRIS
+                        } else {
+                            ColorScheme::CHICORY_COFFEE
+                        })
+                        .bold(),
+                ),
+            );
+
+        let ratio_inner_block = ratio_block.inner(ratio_area);
+        ratio_block.render(ratio_area, buf);
+
+        let [ratio_unit_area, ratio_text_area] =
+            Layout::horizontal([Constraint::Length(4), Constraint::Fill(1)])
+                .areas(ratio_inner_block);
+
+        Line::from(" 1: ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(ratio_unit_area, buf);
+        Line::from(state.ratio_buffer.clone()).render(ratio_text_area, buf);
+
+        let people_target_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" People Target ")
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(3) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(3) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let people_target_inner_block = people_target_block.inner(people_target_area);
+        people_target_block.render(people_target_area, buf);
+
+        let [people_target_text_area, people_target_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(8)])
+                .areas(people_target_inner_block);
+
+        Line::from(state.people_target_buffer.clone()).render(people_target_inner_block, buf);
+        Line::from(" people ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(people_target_unit_area, buf);
+
+        let coffee_g_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Coffee ").alignment(Alignment::Right).style(
+                    Style::default()
+                        .bg(if state.list_state.selected() == Some(4) {
+                            ColorScheme::CHICORY_COFFEE
+                        } else {
+                            ColorScheme::DARK_IRIS
+                        })
+                        .fg(if state.list_state.selected() == Some(4) {
+                            ColorScheme::DARK_IRIS
+                        } else {
+                            ColorScheme::CHICORY_COFFEE
+                        })
+                        .bold(),
+                ),
+            );
+
+        let coffee_g_inner_block = coffee_g_block.inner(coffee_g_area);
+        coffee_g_block.render(coffee_g_area, buf);
+
+        let [coffee_g_text_area, coffee_g_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(3)])
+                .areas(coffee_g_inner_block);
+
+        Line::from(state.coffee_g_buffer.clone()).render(coffee_g_text_area, buf);
+        Line::from(" g ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(coffee_g_unit_area, buf);
+
+        let [b_water_area, _, b_coffee_area] = Layout::horizontal([
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Fill(1),
+        ])
+        .areas(blooming_area);
+        let [p_water_area, _, p_coffee_area] = Layout::horizontal([
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Fill(1),
+        ])
+        .areas(pouring_area);
+
+        let b_water_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Blooming Water ")
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(5) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(5) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let b_coffee_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Blooming Coffee ")
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(6) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(6) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let p_water_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Pouring Water ")
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(7) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(7) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let p_coffee_block = Block::bordered()
+            .border_type(BorderType::Plain)
+            .bg(ColorScheme::DARK_IRIS)
+            .fg(ColorScheme::CHICORY_COFFEE)
+            .title(
+                Line::from(" Pouring Coffee ")
+                    .alignment(Alignment::Right)
+                    .style(
+                        Style::default()
+                            .bg(if state.list_state.selected() == Some(8) {
+                                ColorScheme::CHICORY_COFFEE
+                            } else {
+                                ColorScheme::DARK_IRIS
+                            })
+                            .fg(if state.list_state.selected() == Some(8) {
+                                ColorScheme::DARK_IRIS
+                            } else {
+                                ColorScheme::CHICORY_COFFEE
+                            })
+                            .bold(),
+                    ),
+            );
+
+        let b_water_inner_block = b_water_block.inner(b_water_area);
+        let b_coffee_innter_block = b_coffee_block.inner(b_coffee_area);
+
+        b_water_block.render(b_water_area, buf);
+        b_coffee_block.render(b_coffee_area, buf);
+
+        let p_water_inner_block = p_water_block.inner(p_water_area);
+        let p_coffee_innter_block = p_coffee_block.inner(p_coffee_area);
+
+        p_water_block.render(p_water_area, buf);
+        p_coffee_block.render(p_coffee_area, buf);
+
+        Block::default()
+            .bg(ColorScheme::CHICORY_COFFEE)
+            .fg(ColorScheme::DARK_IRIS)
+            .title(Line::from(" Bloomings ").alignment(Alignment::Right).bold())
+            .title_bottom(
+                Line::from_iter([
+                    Span::from(" "),
+                    Span::from("^c")
+                        .bold()
+                        .style(Style::default().bg(ColorScheme::DARK_IRIS))
+                        .fg(ColorScheme::CHICORY_COFFEE),
+                    Span::from(" to Add "),
+                ])
+                .alignment(Alignment::Left),
+            )
+            .render(blooming_list_area, buf);
+
+        Block::default()
+            .bg(ColorScheme::CHICORY_COFFEE)
+            .fg(ColorScheme::DARK_IRIS)
+            .title(Line::from(" Pourings ").alignment(Alignment::Right).bold())
+            .title_bottom(
+                Line::from_iter([
+                    Span::from(" "),
+                    Span::from("^c")
+                        .bold()
+                        .style(Style::default().bg(ColorScheme::DARK_IRIS))
+                        .fg(ColorScheme::CHICORY_COFFEE),
+                    Span::from(" to Add "),
+                ])
+                .alignment(Alignment::Left),
+            )
+            .render(pouring_list_area, buf);
     }
 }
