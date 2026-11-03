@@ -1,7 +1,5 @@
 use diesel::prelude::*;
 
-use crate::config::schema::blooming::preparation_technique_id;
-
 #[derive(Queryable, Selectable, Identifiable, Insertable)]
 #[diesel(table_name = crate::config::schema::blooming)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]

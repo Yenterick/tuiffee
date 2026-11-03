@@ -8,7 +8,9 @@ use ratatui::{
 };
 
 use crate::{
-    config::schema::blooming::sequency, models::{blooming::Blooming, pouring::Pouring}, presentation::{
+    config::schema::blooming::sequency,
+    models::{blooming::Blooming, pouring::Pouring},
+    presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_preparation_technique_modal_state::AddPreparationTechniqueModalState,
         theme::color_scheme::ColorScheme,
@@ -86,7 +88,9 @@ impl Page for AddPreparationTechniqueModal {
                 }
 
                 4 => {
-                    if state.coffee_g_buffer.len() < 64 && is_valid_float_char(&state.coffee_g_buffer, char) {
+                    if state.coffee_g_buffer.len() < 64
+                        && is_valid_float_char(&state.coffee_g_buffer, char)
+                    {
                         state.coffee_g_buffer.push(char);
                     }
                     ScreenAction::None
@@ -94,15 +98,16 @@ impl Page for AddPreparationTechniqueModal {
 
                 5 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
-                        self.bloomings.push(
-                            Blooming::from(
-                                water_g: state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
-                                time_s: state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
-                                sequency: self.bloomings.len() + 1
-                            );
-                        ); 
+                        self.bloomings.push(Blooming::from(
+                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.bloomings.len() + 1) as i32,
+                        ));
+                        state.add_blooming();
                     } else {
-                        if state.b_water_g_buffer.len() < 32 && is_valid_float_char(&state.b_water_g_buffer, char) {
+                        if state.b_water_g_buffer.len() < 32
+                            && is_valid_float_char(&state.b_water_g_buffer, char)
+                        {
                             state.b_water_g_buffer.push(char);
                         }
                     }
@@ -111,11 +116,12 @@ impl Page for AddPreparationTechniqueModal {
 
                 6 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
-                        self.bloomings.push(
-                            Blooming::from(
-
-                            )
-                        );
+                        self.bloomings.push(Blooming::from(
+                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.bloomings.len() + 1) as i32,
+                        ));
+                        state.add_blooming();
                     } else {
                         if state.b_time_s_buffer.len() < 32 && is_valid_int_char(char) {
                             state.b_time_s_buffer.push(char);
@@ -126,9 +132,16 @@ impl Page for AddPreparationTechniqueModal {
 
                 7 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
-                        
+                        self.pourings.push(Pouring::from(
+                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.bloomings.len() + 1) as i32,
+                        ));
+                        state.add_pouring();
                     } else {
-                        if state.p_water_g_buffer.len() < 32 && is_valid_float_char(&state.p_water_g_buffer, char) {
+                        if state.p_water_g_buffer.len() < 32
+                            && is_valid_float_char(&state.p_water_g_buffer, char)
+                        {
                             state.p_water_g_buffer.push(char);
                         }
                     }
@@ -137,7 +150,12 @@ impl Page for AddPreparationTechniqueModal {
 
                 8 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
-                        
+                        self.pourings.push(Pouring::from(
+                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.bloomings.len() + 1) as i32,
+                        ));
+                        state.add_pouring();
                     } else {
                         if state.p_time_s_buffer.len() < 32 && is_valid_int_char(char) {
                             state.p_time_s_buffer.push(char);
@@ -499,7 +517,7 @@ impl Page for AddPreparationTechniqueModal {
             .bg(ColorScheme::DARK_IRIS)
             .fg(ColorScheme::CHICORY_COFFEE)
             .title(
-                Line::from(" Blooming Water ")
+                Line::from(" Blooming Time ")
                     .alignment(Alignment::Right)
                     .style(
                         Style::default()
@@ -579,7 +597,7 @@ impl Page for AddPreparationTechniqueModal {
         p_water_block.render(p_water_area, buf);
         p_time_block.render(p_time_area, buf);
 
-        Block::default()
+        let blooming_list_block = Block::default()
             .bg(ColorScheme::CHICORY_COFFEE)
             .fg(ColorScheme::DARK_IRIS)
             .title(Line::from(" Bloomings ").alignment(Alignment::Right).bold())
@@ -593,10 +611,24 @@ impl Page for AddPreparationTechniqueModal {
                     Span::from(" to Add "),
                 ])
                 .alignment(Alignment::Left),
-            )
-            .render(blooming_list_area, buf);
+            );
 
-        Block::default()
+        let blooming_list_inner_block = blooming_list_block.inner(blooming_list_area);
+        blooming_list_block.render(blooming_list_area, buf);
+        Line::from_iter(
+            self.bloomings
+                .iter()
+                .map(|blooming| {
+                    Span::from(format!(
+                        " Water: {}g - Time: {}s\n",
+                        blooming.water_g, blooming.time_s
+                    ))
+                })
+                .collect::<Vec<Span>>(),
+        )
+        .render(blooming_list_inner_block, buf);
+
+        let pouring_list_block = Block::default()
             .bg(ColorScheme::CHICORY_COFFEE)
             .fg(ColorScheme::DARK_IRIS)
             .title(Line::from(" Pourings ").alignment(Alignment::Right).bold())
@@ -610,8 +642,22 @@ impl Page for AddPreparationTechniqueModal {
                     Span::from(" to Add "),
                 ])
                 .alignment(Alignment::Left),
-            )
-            .render(pouring_list_area, buf);
+            );
+
+        let pouring_list_inner_block = pouring_list_block.inner(pouring_list_area);
+        pouring_list_block.render(pouring_list_area, buf);
+        Line::from_iter(
+            self.pourings
+                .iter()
+                .map(|pouring| {
+                    Span::from(format!(
+                        " Water: {}g - Time: {}s\n",
+                        pouring.water_g, pouring.time_s
+                    ))
+                })
+                .collect::<Vec<Span>>(),
+        )
+        .render(pouring_list_inner_block, buf);
     }
 }
 
