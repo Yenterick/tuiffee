@@ -63,6 +63,13 @@ impl Page for PreparationMethods {
                     ScreenAction::None
                 }
 
+                ScreenAction::SavePreparationTechnique(..) => {
+                    state.add_preparation_technique_modal = None;
+                    state.add_preparation_technique_modal_state = None;
+
+                    action
+                }
+
                 _ => ScreenAction::None,
             };
         }

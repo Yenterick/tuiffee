@@ -1,5 +1,8 @@
 use crate::{
-    models::{coffee::Coffee, preparation_technique::PreparationTechnique},
+    models::{
+        blooming::Blooming, coffee::Coffee, pouring::Pouring,
+        preparation_technique::PreparationTechnique,
+    },
     presentation::events::pages::Pages,
 };
 
@@ -15,5 +18,5 @@ pub enum ScreenAction {
     LoadId(i32),
     LoadVarieties,
     SaveCoffee(Coffee),
-    SavePreparationTechnique(PreparationTechnique),
+    SavePreparationTechnique(PreparationTechnique, Vec<Blooming>, Vec<Pouring>),
 }

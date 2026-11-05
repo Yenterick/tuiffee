@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-#[derive(Queryable, Selectable, Identifiable, Insertable)]
+#[derive(Queryable, Selectable, Identifiable, Insertable, Clone)]
 #[diesel(table_name = crate::config::schema::pouring)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 #[diesel(belongs_to(crate::models::preparation_technique::PreparationTechnique))]

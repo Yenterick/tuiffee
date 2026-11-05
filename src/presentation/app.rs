@@ -23,7 +23,9 @@ use crate::{
         theme::color_scheme::ColorScheme,
     },
     services::{
-        coffee_service::CoffeeService, preparation_technique_service::PreparationTechniqueService,
+        blooming_service::BloomingService, coffee_service::CoffeeService,
+        pouring_service::PouringService,
+        preparation_technique_service::PreparationTechniqueService,
         variety_service::VarietyService,
     },
 };
@@ -163,6 +165,34 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                                     preparation_methods_page.current_page as usize,
                                     preparation_methods_page.page_size as usize,
                                 )?;
+                        }
+
+                        ScreenAction::SavePreparationTechnique(
+                            preparation_technique,
+                            bloomings,
+                            pourings,
+                        ) => {
+                            let preparation_technique_id = PreparationTechniqueService::create(
+                                &mut conn,
+                                &preparation_technique,
+                            )?;
+
+                            for mut blooming in bloomings {
+                                blooming.assign(preparation_technique_id as i32);
+                                BloomingService::create(&mut conn, &blooming)?;
+                            }
+
+                            for mut pouring in pourings {
+                                pouring.assign(preparation_technique_id as i32);
+                                PouringService::create(&mut conn, &pouring)?;
+                            }
+
+                            let current_size = terminal.size()?;
+                            reload_techniques(
+                                current_size.height,
+                                &mut preparation_methods_page,
+                                &mut conn,
+                            )?;
                         }
 
                         _ => {}

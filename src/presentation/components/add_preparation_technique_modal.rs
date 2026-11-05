@@ -8,8 +8,10 @@ use ratatui::{
 };
 
 use crate::{
-    config::schema::blooming::sequency,
-    models::{blooming::Blooming, pouring::Pouring},
+    models::{
+        blooming::Blooming, grind_level::GrindLevel, pouring::Pouring,
+        preparation_technique::PreparationTechnique,
+    },
     presentation::{
         events::screen_action::ScreenAction, pages::page::Page,
         state::add_preparation_technique_modal_state::AddPreparationTechniqueModalState,
@@ -36,6 +38,36 @@ impl Page for AddPreparationTechniqueModal {
 
     fn handle_key(&mut self, key: KeyEvent, state: &mut Self::State) -> ScreenAction {
         match (key.code, key.modifiers) {
+            (KeyCode::Enter, _) => ScreenAction::SavePreparationTechnique(
+                PreparationTechnique::from(
+                    state.name_buffer.clone(),
+                    match state.grind_level_list_state.selected().unwrap_or(0) {
+                        0 => GrindLevel::ExtraCoarse,
+                        2 => GrindLevel::Coarse,
+                        3 => GrindLevel::MediumCoarse,
+                        4 => GrindLevel::Medium,
+                        5 => GrindLevel::MediumFine,
+                        6 => GrindLevel::Fine,
+                        7 => GrindLevel::ExtraFine,
+                        _ => GrindLevel::Medium,
+                    },
+                    state
+                        .ratio_buffer
+                        .parse::<i32>()
+                        .expect("Invalid data type for ratio"),
+                    state
+                        .people_target_buffer
+                        .parse::<i32>()
+                        .expect("Invalid data type for people target"),
+                    state
+                        .coffee_g_buffer
+                        .parse::<f32>()
+                        .expect("Invalid data type for coffee quantity"),
+                ),
+                self.bloomings.clone(),
+                self.pourings.clone(),
+            ),
+
             (KeyCode::Esc, _) => ScreenAction::Back,
 
             (KeyCode::Char('j'), KeyModifiers::CONTROL) => {
@@ -584,18 +616,66 @@ impl Page for AddPreparationTechniqueModal {
         let b_water_inner_block = b_water_block.inner(b_water_area);
         let b_time_inner_block = b_time_block.inner(b_time_area);
 
-        Line::from(state.b_water_g_buffer.clone()).render(b_water_inner_block, buf);
-        Line::from(state.b_time_s_buffer.clone()).render(b_time_inner_block, buf);
         b_water_block.render(b_water_area, buf);
         b_time_block.render(b_time_area, buf);
+
+        let [b_water_text_area, b_water_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(3)])
+                .areas(b_water_inner_block);
+        let [b_time_text_area, b_time_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(3)])
+                .areas(b_time_inner_block);
+
+        Line::from(state.b_water_g_buffer.clone()).render(b_water_text_area, buf);
+        Line::from(" g ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(b_water_unit_area, buf);
+        Line::from(state.b_time_s_buffer.clone()).render(b_time_text_area, buf);
+        Line::from(" s ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(b_time_unit_area, buf);
 
         let p_water_inner_block = p_water_block.inner(p_water_area);
         let p_time_inner_block = p_time_block.inner(p_time_area);
 
-        Line::from(state.p_water_g_buffer.clone()).render(p_water_inner_block, buf);
-        Line::from(state.p_time_s_buffer.clone()).render(p_time_inner_block, buf);
         p_water_block.render(p_water_area, buf);
         p_time_block.render(p_time_area, buf);
+
+        let [p_water_text_area, p_water_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(3)])
+                .areas(p_water_inner_block);
+        let [p_time_text_area, p_time_unit_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(3)])
+                .areas(p_time_inner_block);
+
+        Line::from(state.p_water_g_buffer.clone()).render(p_water_text_area, buf);
+        Line::from(" g ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(p_water_unit_area, buf);
+        Line::from(state.p_time_s_buffer.clone()).render(p_time_text_area, buf);
+        Line::from(" s ")
+            .style(
+                Style::default()
+                    .bold()
+                    .bg(ColorScheme::CHICORY_COFFEE)
+                    .fg(ColorScheme::DARK_IRIS),
+            )
+            .render(p_time_unit_area, buf);
 
         let blooming_list_block = Block::default()
             .bg(ColorScheme::CHICORY_COFFEE)
