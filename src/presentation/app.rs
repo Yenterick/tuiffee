@@ -1,6 +1,6 @@
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
-use diesel::SqliteConnection;
+use diesel::{Connection, SqliteConnection};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
@@ -9,7 +9,7 @@ use ratatui::{
 };
 
 use crate::{
-    config::db::establish_connection,
+    config::db::{DbError, establish_connection},
     presentation::{
         components::{confirmation_modal::ConfirmationModal, outline::Outline},
         events::{
@@ -172,20 +172,25 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Erro
                             bloomings,
                             pourings,
                         ) => {
-                            let preparation_technique_id = PreparationTechniqueService::create(
-                                &mut conn,
-                                &preparation_technique,
-                            )?;
+                            conn.transaction::<_, DbError, _>(|conn| {
+                                let preparation_technique_id =
+                                    PreparationTechniqueService::create(
+                                        conn,
+                                        &preparation_technique,
+                                    )?;
 
-                            for mut blooming in bloomings {
-                                blooming.assign(preparation_technique_id as i32);
-                                BloomingService::create(&mut conn, &blooming)?;
-                            }
+                                for mut blooming in bloomings {
+                                    blooming.assign(preparation_technique_id);
+                                    BloomingService::create(conn, &blooming)?;
+                                }
 
-                            for mut pouring in pourings {
-                                pouring.assign(preparation_technique_id as i32);
-                                PouringService::create(&mut conn, &pouring)?;
-                            }
+                                for mut pouring in pourings {
+                                    pouring.assign(preparation_technique_id);
+                                    PouringService::create(conn, &pouring)?;
+                                }
+
+                                Ok(())
+                            })?;
 
                             let current_size = terminal.size()?;
                             reload_techniques(

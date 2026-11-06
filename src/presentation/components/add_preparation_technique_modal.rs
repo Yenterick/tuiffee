@@ -3,7 +3,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
-    text::{Line, Span},
+    text::{Line, Span, Text},
     widgets::{Block, BorderType, Clear, Widget},
 };
 
@@ -43,12 +43,12 @@ impl Page for AddPreparationTechniqueModal {
                     state.name_buffer.clone(),
                     match state.grind_level_list_state.selected().unwrap_or(0) {
                         0 => GrindLevel::ExtraCoarse,
-                        2 => GrindLevel::Coarse,
-                        3 => GrindLevel::MediumCoarse,
-                        4 => GrindLevel::Medium,
-                        5 => GrindLevel::MediumFine,
-                        6 => GrindLevel::Fine,
-                        7 => GrindLevel::ExtraFine,
+                        1 => GrindLevel::Coarse,
+                        2 => GrindLevel::MediumCoarse,
+                        3 => GrindLevel::Medium,
+                        4 => GrindLevel::MediumFine,
+                        5 => GrindLevel::Fine,
+                        6 => GrindLevel::ExtraFine,
                         _ => GrindLevel::Medium,
                     },
                     state
@@ -165,9 +165,9 @@ impl Page for AddPreparationTechniqueModal {
                 7 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
                         self.pourings.push(Pouring::from(
-                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
-                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
-                            (self.bloomings.len() + 1) as i32,
+                            state.p_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.p_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.pourings.len() + 1) as i32,
                         ));
                         state.add_pouring();
                     } else {
@@ -183,9 +183,9 @@ impl Page for AddPreparationTechniqueModal {
                 8 => {
                     if char == 'c' && keycode == KeyModifiers::CONTROL {
                         self.pourings.push(Pouring::from(
-                            state.b_water_g_buffer.parse::<f32>().unwrap_or(0.0),
-                            state.b_time_s_buffer.parse::<i32>().unwrap_or(1),
-                            (self.bloomings.len() + 1) as i32,
+                            state.p_water_g_buffer.parse::<f32>().unwrap_or(0.0),
+                            state.p_time_s_buffer.parse::<i32>().unwrap_or(1),
+                            (self.pourings.len() + 1) as i32,
                         ));
                         state.add_pouring();
                     } else {
@@ -695,17 +695,12 @@ impl Page for AddPreparationTechniqueModal {
 
         let blooming_list_inner_block = blooming_list_block.inner(blooming_list_area);
         blooming_list_block.render(blooming_list_area, buf);
-        Line::from_iter(
-            self.bloomings
-                .iter()
-                .map(|blooming| {
-                    Span::from(format!(
-                        " Water: {}g - Time: {}s\n",
-                        blooming.water_g, blooming.time_s
-                    ))
-                })
-                .collect::<Vec<Span>>(),
-        )
+        Text::from_iter(self.bloomings.iter().map(|blooming| {
+            Line::from(format!(
+                " Water: {}g - Time: {}s",
+                blooming.water_g, blooming.time_s
+            ))
+        }))
         .render(blooming_list_inner_block, buf);
 
         let pouring_list_block = Block::default()
@@ -726,17 +721,12 @@ impl Page for AddPreparationTechniqueModal {
 
         let pouring_list_inner_block = pouring_list_block.inner(pouring_list_area);
         pouring_list_block.render(pouring_list_area, buf);
-        Line::from_iter(
-            self.pourings
-                .iter()
-                .map(|pouring| {
-                    Span::from(format!(
-                        " Water: {}g - Time: {}s\n",
-                        pouring.water_g, pouring.time_s
-                    ))
-                })
-                .collect::<Vec<Span>>(),
-        )
+        Text::from_iter(self.pourings.iter().map(|pouring| {
+            Line::from(format!(
+                " Water: {}g - Time: {}s",
+                pouring.water_g, pouring.time_s
+            ))
+        }))
         .render(pouring_list_inner_block, buf);
     }
 }

@@ -70,11 +70,12 @@ impl PreparationTechniqueRepository {
     pub fn insert(
         conn: &mut SqliteConnection,
         preparation_technique: &PreparationTechnique,
-    ) -> Result<usize, DbError> {
+    ) -> Result<i32, DbError> {
         diesel::insert_into(preparation_technique::table)
             .values(preparation_technique)
-            .execute(conn)
-            .map_err(DbError::from)
+            .returning(preparation_technique::id)
+            .get_result::<Option<i32>>(conn)?
+            .ok_or(DbError::NotFound)
     }
 
     pub fn delete(conn: &mut SqliteConnection, id: i32) -> Result<usize, DbError> {

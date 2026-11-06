@@ -29,7 +29,7 @@ impl PreparationTechniqueService {
     pub fn create(
         conn: &mut SqliteConnection,
         preparation_technique: &PreparationTechnique,
-    ) -> Result<usize, DbError> {
+    ) -> Result<i32, DbError> {
         let id = PreparationTechniqueRepository::insert(conn, preparation_technique)?;
         Ok(id)
     }
